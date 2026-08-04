@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # This Script displays some common env variables like HOME,PATH,USER
-#
+# Then we created a custom environmet variable using export
+# then we used child process to show difference between variable & environment variables
+# then count hoe many env are set and display PATH to first three directories
 
 echo "HOME : $HOME"
 echo "USER : $USER"
