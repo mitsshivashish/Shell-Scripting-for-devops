@@ -1,37 +1,70 @@
-In day 2 i learns about varibales and strings and Arrays
+# Day 2: Variables, Strings, and Arrays
 
-"Special Variables Reference:"
-echo "- \$0     : Script name"
-echo "- \$1-\$9  : First 9 arguments"
-echo "- \$#     : Number of arguments"
-echo "- \$@     : All arguments (separate)"
-echo "- \$*     : All arguments (one string)"
-echo "- \$\$     : Current process ID"
-echo "- \$?     : Exit status of last command"
-echo "- \$!     : PID of last background job"
+## Special Variables Reference
 
-Exit Code	Meaning	Example
-0	Success	ls found files
-1	General error	grep found nothing
-2	Misuse of command	ls with invalid option
-126	Command not executable	Permission denied
-127	Command not found	Command doesn't exist
-130	Terminated by Ctrl+C	User interruption
+* `echo "$0"` : Script name
+* `echo "$1" - "$9"` : First 9 arguments
+* `echo "$#"` : Number of arguments
+* `echo "$@"` : All arguments (separate strings)
+* `echo "$*"` : All arguments (one string)
+* `echo "$$"` : Current process ID (PID)
+* `echo "$?"` : Exit status of last command
+* `echo "$!"` : PID of last background job
 
-Important: Always use "$@" when passing arguments to other commands! This preserves spaces in arguments and handles special characters correctly. Unquoted $@ or $* can break with arguments containing spaces.
- ex:- 
-Imagine you run your script with two folder names:./make_folders.sh "Project Alpha" "Project Beta"bash#!/bin/bash
+### Exit Code Meanings
 
-# WRONG WAY: Unquoted $@
-# Bash splits "Project Alpha" into two folders: "Project" and "Alpha"
+| Exit Code | Meaning | Example |
+| :--- | :--- | :--- |
+| **0** | Success | `ls` found files |
+| **1** | General error | `grep` found nothing |
+| **2** | Misuse of command | `ls` with invalid option |
+| **126** | Command not executable | Permission denied |
+| **127** | Command not found | Command doesn't exist |
+| **130** | Terminated by Ctrl+C | User interruption |
+
+---
+
+> ⚠️ **Important:** Always use `"$@"` (with double quotes) when passing arguments to other commands! This preserves spaces in arguments and handles special characters correctly. Unquoted `$@` or `$*` can break with arguments containing spaces.
+
+**Scenario:** Imagine you run your script with two folder names containing spaces:
+```bash
+#!/bin/bash
+./make_folders.sh "Project Alpha" "Project Beta"
+```
+
+## ❌ WRONG WAY: Unquoted `$@`
+
+Bash splits `"Project Alpha"` into two separate folders: `"Project"` and `"Alpha"`.
+
+```bash
 echo "--- Trying unquoted \$@ ---"
-mkdir $@ 
+mkdir \$@
+```
 
-# RIGHT WAY: Quoted "$@"
-# Bash correctly passes "Project Alpha" and "Project Beta" as two folders
+### Result:
+Using unquoted `$@`, you get **4 accidental folders**: 
+1. `Project`
+2. `Alpha`
+3. `Project` (overwritten or error)
+4. `Beta`
+
+---
+
+##  RIGHT WAY: Quoted `"$@"`
+
+Bash correctly passes `"Project Alpha"` and `"Project Beta"` as exactly two folders.
+
+```bash
 echo "--- Trying quoted \"\$@\" ---"
-mkdir "$@"
-Use code with caution.The Resulting Files on Your SystemUsing unquoted $@: You get 4 accidental folders:ProjectAlphaProject (overwritten or errors)BetaUsing quoted "$@": You get exactly the 2 folders you wanted:Project AlphaProject Beta
+mkdir "\$@"
+```
+
+### Result:
+Using quoted `"$@"`, you get exactly the **2 folders** you wanted: 
+1. `Project Alpha`
+2. `Project Beta`
+
+---
 
 # Bash Arrays
 
