@@ -1,5 +1,13 @@
 #!/bin/bash
 
+:'
+- Use a while loop to count from 1 to 10
+- Create an infinite loop that breaks after 5 iterations
+- Use while read to process lines (simulate with echo)
+- Compare while and until loops side by side
+- Use a while loop to wait for a condition
+'
+
 num=0
 
 while true ; do 
