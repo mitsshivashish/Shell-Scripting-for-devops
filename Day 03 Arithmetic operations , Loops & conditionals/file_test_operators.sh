@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if a file path was provided (not empty)
+# Verify the file exists
+# Check if it's a regular file (not a directory)
+# Verify it's readable
+# Check if it's not empty (size > 0)
+# Report all findings
+
 filepath="$0"
 
 # Get the folder directory of the current script
