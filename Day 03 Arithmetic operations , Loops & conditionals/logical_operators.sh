@@ -1,5 +1,12 @@
 #!/bin/bash
 
+:'
+- Check if user is "admin" OR user is "root"
+- Check if age is 18+ AND has permission flag
+- Use NOT to check if user is NOT banned
+- Use command chaining to create a log file only on success
+'
+
 read -p "Enter user (Please enter only admin or root) : " user
 
 if [[ $user == "admin" ]]; then
