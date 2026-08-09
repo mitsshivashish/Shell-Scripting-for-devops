@@ -1,5 +1,10 @@
 #!/bin/bash
 
+: '
+- Create a variable for age
+- Use if-elif-else to categorize: child (0-12), teenager (13-17), adult (18-64), senior (65+)
+'
+
 read -p 'Enter age : ' age
 
 if [ $age -gt 0 -a $age -le 12 ] ; then
