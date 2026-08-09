@@ -372,3 +372,238 @@ Do NOT compare numbers as strings.
 
 **Logical Operators:** `&&` AND, `||` OR, `!` NOT.
 
+
+
+# Bash Logical Operators
+
+Logical operators combine multiple conditions and control command execution.
+
+## Operators
+
+| Operator | Meaning                            |   |                                          |
+| -------- | ---------------------------------- | - | ---------------------------------------- |
+| `&&`     | AND — both conditions must be true |   |                                          |
+| `        |                                    | ` | OR — at least one condition must be true |
+| `!`      | NOT — reverses the condition       |   |                                          |
+
+### Conditions
+
+```bash
+# AND
+[[ $a -gt 5 && $b -lt 10 ]]
+
+# OR
+[[ $name == "admin" || $name == "root" ]]
+
+# NOT
+[[ ! $name == "guest" ]]
+
+# Arithmetic
+(( a > 5 && b > 0 ))
+```
+
+### Precedence
+
+```text
+! > && > ||
+```
+
+Use parentheses for complex conditions:
+
+```bash
+[[ ($a == "x" || $b == "y") && $c == "z" ]]
+```
+
+---
+
+## Command Chaining
+
+```bash
+# Run cmd2 only if cmd1 succeeds
+cmd1 && cmd2
+
+# Run cmd2 only if cmd1 fails
+cmd1 || cmd2
+```
+
+Examples:
+
+```bash
+mkdir -p /tmp/test && echo "Created"
+
+cat file.txt || echo "File not found"
+```
+
+### Ternary-like Pattern
+
+```bash
+[[ $value -gt 25 ]] && echo "Greater" || echo "Smaller"
+```
+
+> **Warning:** If the success command itself fails, the failure command also runs. Use `if/else` for complex logic.
+
+---
+
+## Short-Circuit Evaluation
+
+Bash stops evaluating as soon as the result is known.
+
+```bash
+# First condition false → second is not evaluated
+[[ false && command ]]
+
+# First condition true → second is not evaluated
+[[ true || command ]]
+```
+
+### Guard Pattern
+
+```bash
+[[ -n "$file" && -f "$file" ]] && cat "$file"
+```
+
+### Safe Division
+
+```bash
+[[ $denom -ne 0 && $((10 / denom)) -gt 5 ]]
+```
+
+---
+
+## POSIX `[ ]` Operators
+
+Legacy operators:
+
+```bash
+# AND
+[ $a -gt 5 -a $b -lt 10 ]
+
+# OR
+[ "$x" = "yes" -o "$x" = "y" ]
+```
+
+Preferred Bash version:
+
+```bash
+[[ $a -gt 5 && $b -lt 10 ]]
+[[ "$x" == "yes" || "$x" == "y" ]]
+```
+
+> Prefer `&&` and `||`. Use `-a` and `-o` mainly for strict POSIX compatibility.
+
+---
+
+## Common Mistakes
+
+### Using `&&` inside `[ ]`
+
+```bash
+# ❌ Wrong
+[ $a -gt 5 && $b -lt 10 ]
+
+# ✅ Correct
+[ $a -gt 5 -a $b -lt 10 ]
+
+# ✅ Preferred in Bash
+[[ $a -gt 5 && $b -lt 10 ]]
+```
+
+### Unsafe Ternary-like Pattern
+
+```bash
+# ⚠️ Can be unreliable
+[[ condition ]] && echo "success" || echo "fail"
+
+# ✅ Safer
+if [[ condition ]]; then
+    echo "success"
+else
+    echo "fail"
+fi
+```
+
+### Precedence
+
+```bash
+# Means: a == x OR (b == y AND c == z)
+[[ $a == "x" || $b == "y" && $c == "z" ]]
+
+# Means: (a == x OR b == y) AND c == z
+[[ ($a == "x" || $b == "y") && $c == "z" ]]
+```
+
+---
+
+## Access Control Exercise
+
+Create a script that:
+
+1. Checks if user is `admin` OR `root`
+2. Checks if age is `18+` AND permission is enabled
+3. Uses `!` to check if user is NOT banned
+4. Creates a log file only when a command succeeds
+
+Example:
+
+```bash
+[[ "$user" == "admin" || "$user" == "root" ]]
+
+[[ $age -ge 18 && $has_permission == true ]]
+
+[[ ! $banned == true ]]
+
+some_command && touch access.log
+```
+
+---
+
+## Quick Cheat Sheet
+
+```bash
+# Conditions
+[[ cond1 && cond2 ]]       # AND
+[[ cond1 || cond2 ]]       # OR
+[[ ! cond ]]               # NOT
+
+# Arithmetic
+(( a > 5 && b < 10 ))
+
+# Command chaining
+cmd1 && cmd2               # Run cmd2 on success
+cmd1 || cmd2               # Run cmd2 on failure
+
+# Guard
+[[ -n "$file" && -f "$file" ]] && cat "$file"
+
+# Parentheses
+[[ (cond1 || cond2) && cond3 ]]
+
+# POSIX
+[ cond1 -a cond2 ]         # AND
+[ cond1 -o cond2 ]         # OR
+```
+
+## Golden Rules
+
+```text
+&& → AND
+|| → OR
+!  → NOT
+
+! > && > ||              # Precedence
+
+[[ ]] → Preferred for Bash
+(( )) → Arithmetic conditions
+-a / -o → Legacy POSIX [ ] operators
+
+Short-circuiting avoids unnecessary/unsafe checks.
+
+Use if/else instead of cmd && success || failure
+when the logic is complex.
+```
+
+## Next Topic
+
+**File Test Operators** — checking whether files/directories exist and whether they are readable, writable, executable, etc.
+
+
