@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This script is for comparison operators and it checks if number is between range of 1-100
+# also it validates if string is not empty
+# check if a filename has specific extension (.sh)
+# using regex to validate email
+
 read -p "enter the number " num
 
 [[ $num -lt 100 && $num -gt 1 ]] && echo "Number is in range between 1-100" || echo "Number is not in range"
