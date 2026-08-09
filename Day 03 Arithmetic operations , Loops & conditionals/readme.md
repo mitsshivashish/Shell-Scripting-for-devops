@@ -607,3 +607,180 @@ when the logic is complex.
 **File Test Operators** — checking whether files/directories exist and whether they are readable, writable, executable, etc.
 
 
+
+# Bash File Test Operators
+
+File tests check files/directories for existence, permissions, type, size, and relationships.
+
+## Existence
+
+```
+[[ -e "$file" ]]   # Exists
+[[ -f "$file" ]]   # Regular file
+[[ -d "$file" ]]   # Directory
+[[ -L "$file" ]]   # Symbolic link
+```
+
+## Permissions
+
+```
+[[ -r "$file" ]]   # Readable
+[[ -w "$file" ]]   # Writable
+[[ -x "$file" ]]   # Executable
+[[ -s "$file" ]]   # Exists and size > 0
+```
+
+## File Types
+
+```
+[[ -b "$file" ]]   # Block device
+[[ -c "$file" ]]   # Character device
+[[ -p "$file" ]]   # Named pipe (FIFO)
+[[ -S "$file" ]]   # Socket
+```
+
+`-f` follows symbolic links. Use `-L` to specifically check for a symlink.
+
+```
+[[ -L "$link" && -e "$link" ]]   # Symlink + valid target
+```
+
+## File Comparison
+
+```
+[[ "$file1" -nt "$file2" ]]   # file1 newer
+[[ "$file1" -ot "$file2" ]]   # file1 older
+[[ "$file1" -ef "$file2" ]]   # Same file/inode
+```
+
+Useful for backups, synchronization, and cache checks.
+
+Always check files exist before `-nt`/`-ot`:
+
+```
+if [[ -f "$backup" && -f "$source" ]]; then
+    [[ "$backup" -nt "$source" ]] && echo "Backup is current"
+fi
+```
+
+## String Tests
+
+```
+[[ -z "$filename" ]]   # Empty
+[[ -n "$filename" ]]   # Not empty
+```
+
+Example:
+
+```
+if [[ -n "$1" && -f "$1" ]]; then
+    echo "Processing file: $1"
+else
+    echo "Please provide a valid filename"
+fi
+```
+
+## Common Mistakes
+
+### Always Quote Paths
+
+```
+# Wrong
+file="my file.txt"
+[[ -f $file ]]
+
+# Correct
+[[ -f "$file" ]]
+```
+
+### `-e` vs `-f`
+
+```
+[[ -e "/tmp" ]]   # True: exists
+[[ -f "/tmp" ]]   # False: directory
+
+-e → Any existing file type
+-f → Regular file only
+```
+
+### Check Before Using
+
+```
+# Risky
+cat "$config_file"
+
+# Safe
+if [[ -f "$config_file" ]]; then
+    cat "$config_file"
+else
+    echo "Config file not found!"
+    exit 1
+fi
+```
+
+## File Validation Exercise
+
+Create a script that checks:
+
+1. File path was provided
+2. File exists
+3. It is a regular file
+4. It is readable
+5. It is not empty
+6. Reports all findings
+
+Useful tests:
+
+```
+[[ -n "$file" ]]   # Path provided
+[[ -e "$file" ]]   # Exists
+[[ -f "$file" ]]   # Regular file
+[[ -r "$file" ]]   # Readable
+[[ -s "$file" ]]   # Not empty
+```
+
+## Quick Cheat Sheet
+
+```
+# Existence
+-e  → Exists
+-f  → Regular file
+-d  → Directory
+-L  → Symbolic link
+
+# Permissions / Size
+-r  → Readable
+-w  → Writable
+-x  → Executable
+-s  → Size > 0
+
+# File Types
+-b  → Block device
+-c  → Character device
+-p  → Named pipe
+-S  → Socket
+
+# Comparison
+-nt → Newer than
+-ot → Older than
+-ef → Same file
+
+# Strings
+-z  → Empty
+-n  → Not empty
+```
+
+## Golden Rules
+
+```
+Always quote paths: [[ -f "$file" ]]
+-f → Use when you need a regular file
+Check before file operations
+Check both files before -nt/-ot
+Prefer [[ ]] in Bash
+```
+
+## Next Topic
+
+Loops — `for`, `while`, and `until`.
+
