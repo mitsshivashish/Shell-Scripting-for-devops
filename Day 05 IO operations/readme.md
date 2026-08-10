@@ -373,3 +373,144 @@ A pipe (`|`) sends the **stdout** of one command to the **stdin** of another com
     Input → Command → Pipe → Command → Pipe → Command → Output
 
 **Pipelines allow multiple small Linux commands to work together to process data efficiently.**
+
+# Bash Here-Documents & Here-Strings
+
+Bash provides **Here-Documents (`<<`)** and **Here-Strings (`<<<`)** to feed text directly into commands without creating temporary files.
+
+---
+
+## Here-Document `<<`
+
+Used for **multiline input**.
+
+    cat <<EOF
+    Line 1
+    Line 2
+    EOF
+
+`EOF` is the delimiter. Bash keeps reading until the delimiter appears alone on a line.
+
+### Variable & Command Expansion
+
+By default, variables and commands are expanded:
+
+    cat <<EOF
+    User: $USER
+    Message: $(echo hi)
+    EOF
+
+    $USER       → Variable expansion
+    $(...)      → Command substitution
+
+---
+
+## Prevent Expansion
+
+Quote the delimiter to treat the content as literal text:
+
+    cat <<'EOF'
+    User: $USER
+    Date: $(date)
+    EOF
+
+Output contains the literal:
+
+    $USER
+    $(date)
+
+> Useful when generating scripts or configuration files.
+
+---
+
+## `<<-` — Remove Leading Tabs
+
+    cat <<-EOF
+    	Indented text
+    	Another line
+    EOF
+
+`<<-` removes **leading TAB characters** from each line.
+
+> It removes tabs, **not spaces**.
+
+Useful when indenting Here-Docs inside functions or conditions.
+
+---
+
+## Here-String `<<<`
+
+Used for **short, single-line input**.
+
+    wc -w <<< "one two three"
+
+Output:
+
+    3
+
+`<<< "text"` sends the string to the command's stdin and automatically adds a newline.
+
+Instead of:
+
+    echo "one two three" | wc -w
+
+You can use:
+
+    wc -w <<< "one two three"
+
+---
+
+## Here-Doc vs Here-String
+
+| Syntax | Purpose |
+|---|---|
+| `<<EOF` | Multiline input |
+| `<<'EOF'` | Multiline literal input |
+| `<<-EOF` | Multiline input, removes leading tabs |
+| `<<< "text"` | Single-line input |
+
+---
+
+## Common Patterns
+
+    # Multiline text
+    cat <<EOF
+    Hello
+    World
+    EOF
+
+    # Literal text
+    cat <<'EOF'
+    $USER
+    $(date)
+    EOF
+
+    # Write directly to a file
+    cat <<EOF > config.txt
+    NAME=app
+    PORT=8080
+    EOF
+
+    # Single-line input
+    grep "hello" <<< "hello world"
+
+---
+
+## Quick Cheat Sheet
+
+    <<EOF       → Here-Document
+    <<'EOF'     → Here-Document without expansion
+    <<-EOF      → Here-Document, remove leading tabs
+    <<< "text"  → Here-String
+
+    $var        → Expanded in normal Here-Doc
+    $(cmd)      → Executed in normal Here-Doc
+    'EOF'       → Prevents expansion
+
+## Golden Rules
+
+- Use `<<` for **multiline input**.
+- Use `<<<` for **quick single-line input**.
+- Quote the delimiter when you need **literal text**.
+- `<<-` removes **tabs only**, not spaces.
+- Here-Docs can be redirected directly into files.
