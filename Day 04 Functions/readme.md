@@ -281,3 +281,58 @@ export -f inc
 - `export` → Share with child processes
 - Use `local` for function variables
 - Use prefixes like `APP_` for globals
+
+# Bash Recursive Functions — Cheatsheet
+
+Recursion = a function calling itself.
+
+## Factorial
+
+```bash
+factorial() {
+    local n=$1
+
+    if (( n <= 1 )); then
+        echo 1
+    else
+        echo $(( n * $(factorial $((n-1))) ))
+    fi
+}
+
+echo "$(factorial 5)"    # 120
+```
+
+**Base case is mandatory** to stop recursion.
+
+## Directory Traversal
+
+```bash
+traverse() {
+    local dir=$1
+
+    for entry in "$dir"/*; do
+        [ -e "$entry" ] || continue
+        echo "$entry"
+
+        if [ -d "$entry" ]; then
+            traverse "$entry"
+        fi
+    done
+}
+
+traverse "."
+```
+
+## Quick Rules
+
+```text
+Base case     → Stops recursion
+Recursive call → Function calls itself
+local         → Keep variables scoped
+"$dir"/*      → Quote paths safely
+```
+
+- Prefer **loops** for deep/large recursion.
+- Deep recursion can hit system limits.
+- Use **memoization/caching** for expensive repeated calculations.
+- Always quote paths in recursive directory operations.
