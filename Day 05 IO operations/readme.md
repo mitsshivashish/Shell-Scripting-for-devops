@@ -157,3 +157,109 @@ Input is split using `IFS`.
     -n  → Number of characters
 
 **Best practice:** Use `read -r` for text, `read -p` for prompts, and `IFS= read -r` when reading files line-by-line.
+
+
+# Bash I/O Redirection — Cheatsheet
+
+Bash uses **file descriptors (FDs)** to control input, output, and errors.
+
+## File Descriptors
+
+| FD | Name | Purpose |
+|---|---|---|
+| `0` | stdin | Input to command |
+| `1` | stdout | Normal output |
+| `2` | stderr | Errors/diagnostics |
+
+## Output Redirection
+
+    echo "hello" > out.txt
+
+`>` → Redirects stdout to a file and **overwrites** it.
+
+    echo "world" >> out.txt
+
+`>>` → Redirects stdout and **appends** to the file.
+
+## Error Redirection
+
+    ls /no/such/path 2> err.txt
+
+`2>` means:
+
+    2       → stderr
+    >       → redirect
+    err.txt → destination
+
+So:
+
+    command 2> err.txt
+
+means **send only errors (stderr) to `err.txt`**.
+
+Normal output (stdout) still goes to the terminal.
+
+## Why `2>`?
+
+    ls /no/such/path > out.txt
+
+`>` only redirects stdout, so the error still appears on the screen.
+
+    ls /no/such/path 2> err.txt
+
+`2>` redirects stderr, so the error goes into `err.txt`.
+
+## Merge stdout + stderr
+
+    command > both.txt 2>&1
+
+Meaning:
+
+    stdout → both.txt
+    stderr → same place as stdout
+
+Both outputs go into `both.txt`.
+
+## Send Output to stderr
+
+    echo "Error message" >&2
+
+`>&2` → Sends stdout to stderr.
+
+Equivalent:
+
+    echo "Error message" 1>&2
+
+Useful for separating normal output from errors in scripts.
+
+## Discard Output
+
+    command > /dev/null
+
+`/dev/null` → Discards output.
+
+Discard both stdout and stderr:
+
+    command > /dev/null 2>&1
+
+## Quick Cheat Sheet
+
+    0           → stdin
+    1           → stdout
+    2           → stderr
+
+    > file      → stdout → file (overwrite)
+    >> file     → stdout → file (append)
+    2> file     → stderr → file
+    2>> file    → stderr → file (append)
+    > file 2>&1 → stdout + stderr → file
+    >&2         → stdout → stderr
+    /dev/null   → Discard output
+
+## Golden Rule
+
+    >          → Normal output
+    2>         → Errors
+    2>&1       → Merge errors with normal output
+    >&2        → Send message to stderr
+    /dev/null  → Throw output away
