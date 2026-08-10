@@ -101,22 +101,22 @@ local       → Prevent global side effects
 $?          → Previous command status
 ```
 
-
-# Bash Function Parameters 
+# Bash Function Parameters
 
 Function parameters let you pass values into functions.
 
 ## Positional Parameters
 
-$1      → First argument
-$2      → Second argument
-$3      → Third argument
-$@      → All arguments
-$*      → All arguments
-$#      → Number of arguments
+`$1`      → First argument  
+`$2`      → Second argument  
+`$3`      → Third argument  
+`$@`      → All arguments  
+`$*`      → All arguments  
+`$#`      → Number of arguments  
 
-Example:
+### Example
 
+```bash
 show() {
     echo "First: $1"
     echo "Second: $2"
@@ -124,14 +124,16 @@ show() {
 }
 
 show "alpha" "beta gamma"
+```
 
 ## "$@" vs "$*"
 
-"$@" → Preserves each argument separately
-"$*" → Joins all arguments into one string
+`"$@"` → Preserves each argument separately  
+`"$*"` → Joins all arguments into one string  
 
-Example:
+### Example
 
+```bash
 show() {
     for arg in "$@"; do
         echo "[$arg]"
@@ -139,18 +141,22 @@ show() {
 }
 
 show "alpha beta" gamma
+```
 
 Output:
 
+```text
 [alpha beta]
 [gamma]
+```
 
-Prefer "$@" when iterating or forwarding arguments.
+> **Prefer `"$@"` when iterating or forwarding arguments.**
 
 ## shift
 
-shift removes the first argument and moves the remaining arguments left.
+`shift` removes the first argument and moves the remaining arguments left.
 
+```bash
 process() {
     while (( $# )); do
         echo "Processing: $1"
@@ -159,13 +165,15 @@ process() {
 }
 
 process "one" "two" "three"
+```
 
 Flow:
 
-one → shift → two → shift → three → shift → done
+`one → shift → two → shift → three → shift → done`
 
 ## Forward Arguments
 
+```bash
 # ❌ Wrong
 caller() {
     callee $@
@@ -175,23 +183,27 @@ caller() {
 caller() {
     callee "$@"
 }
+```
 
-Always use "$@" to preserve spaces and argument boundaries.
+> Always use `"$@"` to preserve spaces and argument boundaries.
 
 ## Quick Cheat Sheet
 
-$1, $2...  → Positional arguments
-$#         → Argument count
-"$@"       → All arguments separately
-"$*"       → All arguments as one string
-shift      → Remove first argument
+| Syntax | Meaning |
+|---|---|
+| `$1`, `$2`... | Positional arguments |
+| `$#` | Argument count |
+| `"$@"` | All arguments separately |
+| `"$*"` | All arguments as one string |
+| `shift` | Remove first argument |
 
 ## Golden Rules
 
-"$@" → Preferred for iteration/forwarding
-"$*" → Use when you intentionally want one string
-Quote "$@" and "$*"
-Avoid unquoted $@ / $* because spaces can break arguments.
+- `"$@"` → Preferred for iteration/forwarding
+- `"$*"` → Use when you intentionally want one string
+- Always quote `"$@"` and `"$*"`
+- Avoid unquoted `$@` / `$*` because spaces can break arguments
+
 
 # Bash Return Values — Commands Cheatsheet
 
