@@ -237,3 +237,47 @@ echo "data"
 
 # Error/log output
 echo "Error occurred" >&2
+```
+
+
+# Bash Function Scope — Cheatsheet
+
+```bash
+# Global variable
+count=0
+
+# Changes global variable
+inc() {
+    count=$((count + 1))
+}
+
+# Local variable
+inc_local() {
+    local count=0
+    count=$((count + 1))
+    echo "$count"
+}
+
+# Export variable to child processes
+export APP_FLAG=yes
+
+# Export function (Bash-specific)
+export -f inc
+```
+
+## Quick Reference
+
+| Syntax | Meaning |
+|---|---|
+| `var=value` | Global by default |
+| `local var=value` | Function-local |
+| `export VAR=value` | Available to child processes |
+| `export -f func` | Export function |
+| `. file.sh` | Source in current shell |
+
+## Rules
+
+- `local` → Prevent global side effects
+- `export` → Share with child processes
+- Use `local` for function variables
+- Use prefixes like `APP_` for globals
