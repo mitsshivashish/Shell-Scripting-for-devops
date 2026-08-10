@@ -159,6 +159,7 @@ Input is split using `IFS`.
 **Best practice:** Use `read -r` for text, `read -p` for prompts, and `IFS= read -r` when reading files line-by-line.
 
 
+
 # Bash I/O Redirection — Cheatsheet
 
 Bash uses **file descriptors (FDs)** to control input, output, and errors.
@@ -263,6 +264,8 @@ Discard both stdout and stderr:
     2>&1       → Merge errors with normal output
     >&2        → Send message to stderr
     /dev/null  → Throw output away
+
+
 
 # Bash Pipes & Pipelines
 
@@ -373,6 +376,8 @@ A pipe (`|`) sends the **stdout** of one command to the **stdin** of another com
     Input → Command → Pipe → Command → Pipe → Command → Output
 
 **Pipelines allow multiple small Linux commands to work together to process data efficiently.**
+
+
 
 # Bash Here-Documents & Here-Strings
 
@@ -514,3 +519,163 @@ You can use:
 - Quote the delimiter when you need **literal text**.
 - `<<-` removes **tabs only**, not spaces.
 - Here-Docs can be redirected directly into files.
+
+# Bash Process Substitution — Cheatsheet
+
+**Process substitution** lets you use the output or input of a command as if it were a file, without creating a temporary file manually.
+
+## Input Process Substitution: `<()`
+
+Use `<(command)` when a command expects a **file** but you want to provide command output.
+
+```bash
+diff <(sort f1.txt) <(sort f2.txt)
+```
+
+Bash runs both `sort` commands and provides file-like paths to `diff`.
+
+### Example
+
+```bash
+printf "c\na\nb\n" > f1.txt
+printf "b\nc\nd\n" > f2.txt
+
+diff <(sort f1.txt) <(sort f2.txt)
+```
+
+```text
+<(sort f1.txt) → Virtual file containing sorted f1.txt
+<(sort f2.txt) → Virtual file containing sorted f2.txt
+diff            → Compares both
+```
+
+> Useful when a command requires **file arguments** instead of stdin.
+
+## `paste` with Process Substitution
+
+```bash
+paste <(seq 1 3) <(seq 3 -1 1)
+```
+
+Output:
+
+```text
+1    3
+2    2
+3    1
+```
+
+### Why `123` and `321`?
+
+```bash
+seq 1 3
+```
+
+Produces:
+
+```text
+1
+2
+3
+```
+
+```bash
+seq 3 -1 1
+```
+
+Means:
+
+```text
+start = 3
+step  = -1
+end   = 1
+```
+
+Produces:
+
+```text
+3
+2
+1
+```
+
+`paste` combines them line-by-line:
+
+```text
+1    3
+2    2
+3    1
+```
+
+## Output Process Substitution: `>()`
+
+Use `>(command)` when you want command output to be **fed into another command** as if it were a file.
+
+```bash
+seq 1 5 > >(awk '{print "x"$0"x"}')
+```
+
+Output:
+
+```text
+x1x
+x2x
+x3x
+x4x
+x5x
+```
+
+Flow:
+
+```text
+seq → virtual file → awk → output
+```
+
+## `<()` vs `>()`
+
+| Syntax | Purpose |
+|---|---|
+| `<(cmd)` | Command output acts like a file |
+| `>(cmd)` | File-like input sends data into command |
+
+```bash
+# Input process substitution
+diff <(sort file1) <(sort file2)
+
+# Output process substitution
+command > >(awk '{print $0}')
+```
+
+## Common Uses
+
+```bash
+# Compare command outputs
+diff <(command1) <(command2)
+
+# Compare sorted outputs
+diff <(sort file1) <(sort file2)
+
+# Combine outputs side-by-side
+paste <(command1) <(command2)
+
+# Send output into another command
+command > >(another_command)
+```
+
+## Quick Cheat Sheet
+
+```text
+<(command) → Treat command output as a file
+>(command) → Treat command input as a file
+seq 1 3    → 1 2 3
+seq 3 -1 1 → 3 2 1
+paste      → Combine inputs line-by-line
+diff       → Compare file-like inputs
+```
+
+> **Key idea:** Process substitution creates a temporary file-like interface (commonly through `/dev/fd/...`) so commands that expect files can work directly with command output.
+
+## Golden Rule
+
+**`<(cmd)` = command output → file-like input**  
+**`>(cmd)` = file-like output → command input**
