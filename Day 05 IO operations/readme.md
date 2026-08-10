@@ -263,3 +263,113 @@ Discard both stdout and stderr:
     2>&1       → Merge errors with normal output
     >&2        → Send message to stderr
     /dev/null  → Throw output away
+
+# Bash Pipes & Pipelines
+
+A pipe (`|`) sends the **stdout** of one command to the **stdin** of another command.
+
+    command1 | command2 | command3
+
+## Basic Example
+
+    echo "hello world" | wc -w
+
+    # Output: 2
+
+## Word Counting Pipeline
+
+    text="The quick brown fox jumps over the lazy dog the THE"
+
+    printf "%s\n" "$text" |
+    tr '[:upper:]' '[:lower:]' |
+    tr -cs '[:alpha:]' '\n' |
+    sort |
+    uniq -c |
+    sort -nr
+
+    printf       → Safely prints text
+    tr           → Converts uppercase to lowercase
+    tr -cs       → Converts non-letters into new lines
+    sort         → Sorts words
+    uniq -c      → Counts duplicate words
+    sort -nr     → Sorts counts highest → lowest
+
+    # Example:
+    # 3 the
+    # 1 quick
+    # 1 over
+
+    # `sort` is needed before `uniq` because `uniq` only detects
+    # consecutive duplicate lines.
+
+## grep + awk
+
+    printf "user:alice\nuser:bob\nrole:admin\n" |
+    grep '^user:' |
+    awk -F: '{print $2}'
+
+    # Output:
+    # alice
+    # bob
+
+    grep '^user:'       → Keeps lines starting with "user:"
+    awk -F:             → Uses : as field separator
+    '{print $2}'        → Prints the second field
+
+## tee
+
+`tee` saves output to a file while also passing it to the next command.
+
+    echo "important output" |
+    tee saved.txt |
+    sed 's/.*/[&]/'
+
+    # Terminal:
+    # [important output]
+
+    # saved.txt:
+    # important output
+
+    echo "saved.txt:"
+    cat saved.txt
+
+    # Flow:
+    # echo → tee → saved.txt
+    #          ↓
+    #         sed → terminal
+
+## Common Pipeline Commands
+
+    cat file.txt | grep "error"        # Filter lines
+    cat file.txt | sort                # Sort lines
+    cat file.txt | sort | uniq         # Remove duplicates
+    cat file.txt | wc -l               # Count lines
+    cat file.txt | grep "error" | wc -l # Count matching lines
+    command | tee output.txt           # Display + save output
+
+## Important Commands
+
+    |                       → Pipe stdout → stdin
+    grep "text"            → Search/filter lines
+    grep '^user:'          → Lines starting with user:
+    awk -F: '{print $2}'   → Print second : separated field
+    sort                   → Sort lines
+    uniq                   → Remove consecutive duplicates
+    uniq -c                → Count duplicates
+    sort -nr               → Numeric reverse sorting
+    tr                     → Translate/replace characters
+    sed                    → Transform text
+    tee                    → Save + pass output
+    wc -l                  → Count lines
+
+## Quick Reference
+
+    cmd1 | cmd2            → cmd1 output becomes cmd2 input
+    cmd1 | cmd2 | cmd3     → Multi-stage pipeline
+    tee file               → Save output and continue pipeline
+
+## Golden Rule
+
+    Input → Command → Pipe → Command → Pipe → Command → Output
+
+**Pipelines allow multiple small Linux commands to work together to process data efficiently.**
