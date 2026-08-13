@@ -167,4 +167,163 @@ tr ',' '\n'              → Replace delimiter
 * For binary data, prefer tools like `dd` or `xxd` instead of text-based `read`.
 
 
+# Bash File Writing — Cheatsheet
 
+Bash provides several ways to create, overwrite, append, format, and safely write files.
+
+## Basic Writing
+
+```bash
+echo "Hello" > file.txt
+echo "World" >> file.txt
+```
+
+`>` → Create/overwrite file  
+`>>` → Create/append to file
+
+```bash
+printf "Name: %s\nAge: %d\n" "Alice" 25 > file.txt
+```
+
+`printf` → Precise and reliable formatted output.
+
+## printf Formats
+
+```text
+%s      → String
+%d      → Integer
+%f      → Float
+%.2f    → Float with 2 decimals
+%10s    → Right-aligned, width 10
+%-10s   → Left-aligned, width 10
+%05d    → Zero-padded integer
+```
+
+```bash
+printf "%05d\n" 42
+# 00042
+
+printf "%-15s %8d %10.2f\n" "Alice" 25 75000.50
+```
+
+## tee
+
+```bash
+echo "Hello" | tee file.txt
+echo "World" | tee -a file.txt
+```
+
+`tee` → Write to file **and** display output.  
+`tee -a` → Append instead of overwrite.
+
+## Here-Documents
+
+Write multiple lines at once:
+
+```bash
+cat > config.txt << 'EOF'
+[settings]
+debug=true
+port=8080
+host=localhost
+EOF
+```
+
+```text
+<< 'EOF' → No variable/command expansion
+<< EOF   → Variables and commands are expanded
+```
+
+Example:
+
+```bash
+name="MyApp"
+version="1.0"
+
+cat > config.txt << EOF
+app_name=$name
+app_version=$version
+generated=$(date)
+EOF
+```
+
+Append with a Here-Document:
+
+```bash
+cat >> log.txt << EOF
+[$(date)] New entry
+EOF
+```
+
+Here-string:
+
+```bash
+cat <<< "Single line" > file.txt
+```
+
+## Safe File Writing
+
+### Atomic Write
+
+```bash
+temp=$(mktemp)
+echo "new content" > "$temp" && mv "$temp" target.txt
+```
+
+Write to a temporary file first, then replace the target only after a successful write.
+
+### Backup Before Overwrite
+
+```bash
+cp file.txt file.txt.bak
+echo "new content" > file.txt
+```
+
+### Check Write Success
+
+```bash
+if echo "data" > file.txt; then
+    echo "Write succeeded"
+else
+    echo "Write failed!" >&2
+    exit 1
+fi
+```
+
+### Prevent Accidental Overwrite
+
+```bash
+set -o noclobber
+
+echo "test" > existing.txt     # Fails if file exists
+echo "test" >| existing.txt    # Force overwrite
+```
+
+## Quick Cheat Sheet
+
+```text
+> file       → Create/overwrite
+>> file      → Create/append
+tee file     → Write + display
+tee -a file  → Append + display
+
+printf       → Formatted output
+<< EOF       → Multiline input with expansion
+<< 'EOF'     → Multiline literal input
+<<< "text"   → Single-line input
+
+mktemp       → Create temporary file
+noclobber    → Prevent accidental overwrite
+>&2          → Send message to stderr
+```
+
+## Golden Rules
+
+```text
+>       → Be careful: destroys existing content
+>>      → Use for appending/logs
+printf  → Prefer for predictable formatting
+<<'EOF' → Use when content must remain literal
+mktemp  → Useful for safe/atomic writes
+backup  → Create one before overwriting important files
+```
