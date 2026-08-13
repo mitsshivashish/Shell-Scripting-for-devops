@@ -1,5 +1,16 @@
 #!/bin/bash
 
+:'
+Task: Create a function that validates configuration files!
+
+Requirements:
+
+- Check file exists and is readable
+- Verify file is not empty
+- Check for required keys (e.g., "host", "port")
+- Return appropriate exit codes and messages
+'
+
 create_local() {
 test_dir="tmp/bash_file"
 mkdir -p $test_dir
@@ -14,6 +25,7 @@ sample_file="$test_dir/test_file.txt"
 }
 
 [[ -s $sample_file ]] &&  echo "File is not empty" || echo "File is empty"
+
 }
 
 create_local
