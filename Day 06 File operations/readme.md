@@ -327,3 +327,239 @@ printf  → Prefer for predictable formatting
 mktemp  → Useful for safe/atomic writes
 backup  → Create one before overwriting important files
 ```
+
+# Bash File Manipulation — Cheatsheet
+
+Bash provides commands to **copy, move, delete, create, modify permissions, and find files**.
+
+## Basic File Operations
+
+```bash
+cp file.txt copy.txt
+cp file.txt dir/
+cp -r dir1 dir2
+```
+
+`cp` → Copy files/directories  
+`-r` → Copy directories recursively  
+`-p` → Preserve permissions/timestamps  
+`-i` → Ask before overwrite
+
+```bash
+mv old.txt new.txt
+mv file.txt dir/
+```
+
+`mv` → Move or rename files  
+`-i` → Ask before overwrite  
+`-n` → Don't overwrite
+
+```bash
+rm file.txt
+rm -r directory
+rm -i file.txt
+rm -f file.txt
+```
+
+`rm` → Delete files  
+`-r` → Delete directories recursively  
+`-i` → Ask before deleting  
+`-f` → Force deletion
+
+> ⚠️ `rm -rf` is dangerous. Always verify the path before using it.
+
+```bash
+touch file.txt
+mkdir dir
+mkdir -p parent/child
+rmdir empty_dir
+```
+
+`touch` → Create file/update timestamp  
+`mkdir -p` → Create directories including missing parents  
+`rmdir` → Remove empty directories
+
+## File Permissions — `chmod`
+
+Permissions:
+
+```text
+r = read     = 4
+w = write    = 2
+x = execute  = 1
+```
+
+Permission groups:
+
+```text
+u → user/owner
+g → group
+o → others
+a → all
+```
+
+### Symbolic Mode
+
+```bash
+chmod u+x script.sh
+chmod go-r file.txt
+chmod a+r file.txt
+chmod u+rw file.txt
+```
+
+```text
+u+x   → Add execute for owner
+go-r  → Remove read from group/others
+a+r   → Add read for everyone
+```
+
+### Numeric Mode
+
+```bash
+chmod 755 script.sh
+chmod 644 file.txt
+chmod 700 private.txt
+chmod 600 secret.txt
+```
+
+Common permissions:
+
+```text
+755 → Owner: rwx | Group: r-x | Others: r-x
+644 → Owner: rw- | Group: r-- | Others: r--
+700 → Owner: rwx | Group: --- | Others: ---
+600 → Owner: rw- | Group: --- | Others: ---
+```
+
+## `find` — Locate Files
+
+```bash
+find /path -name "*.txt"
+```
+
+Find files by name.
+
+```bash
+find /path -iname "*.TXT"
+```
+
+Case-insensitive name search.
+
+### Find by Type
+
+```bash
+find /path -type f    # Regular files
+find /path -type d    # Directories
+find /path -type l    # Symbolic links
+```
+
+### Find by Time
+
+```bash
+find /path -mtime -7    # Modified within 7 days
+find /path -mtime +30   # Modified more than 30 days ago
+find /path -mmin -60    # Modified within 60 minutes
+```
+
+### Find by Size
+
+```bash
+find /path -size +100M
+find /path -size -1k
+```
+
+`+` → Greater than  
+`-` → Less than
+
+### Find by Permissions
+
+```bash
+find /path -perm 755
+find /path -perm -u+x
+```
+
+`-perm 755` → Exact permissions  
+`-perm -u+x` → User has execute permission
+
+## Execute Commands with `find`
+
+```bash
+find /path -name "*.log" -delete
+```
+
+Delete matching files.
+
+```bash
+find /path -name "*.sh" -exec chmod +x {} \;
+```
+
+Make matching scripts executable.
+
+```bash
+find /path -type f -exec grep -l "error" {} \;
+```
+
+Find files containing `error`.
+
+`{}` → Current file found by `find`  
+`\;` → End of `-exec` command
+
+## `find` + `xargs`
+
+Useful when processing many files:
+
+```bash
+find /path -name "*.txt" | xargs grep "pattern"
+```
+
+For filenames containing spaces/special characters:
+
+```bash
+find /path -name "*.log" -print0 | xargs -0 rm -f
+```
+
+`-print0` + `xargs -0` → Safely handles spaces and special characters.
+
+## Quick Cheat Sheet
+
+```text
+cp file copy             → Copy file
+cp -r dir copy           → Copy directory
+mv old new                → Move/rename
+rm file                   → Delete file
+rm -r dir                 → Delete directory
+touch file                → Create/update file
+mkdir -p dir              → Create directory tree
+
+chmod 755 file            → Set permissions
+chmod u+x file            → Add execute for owner
+chmod go-w file           → Remove write from group/others
+
+find /path -name "*.txt"  → Find by name
+find /path -type f        → Find files
+find /path -type d        → Find directories
+find /path -mtime -7      → Modified within 7 days
+find /path -size +100M    → Larger than 100 MB
+find /path -exec cmd {} \; → Run command on results
+```
+
+## Golden Rules
+
+```text
+cp       → Copy
+mv       → Move / Rename
+rm       → Delete
+chmod    → Change permissions
+find     → Search files/directories
+
+755 → Executable
+644 → Normal file
+600 → Private/sensitive file
+
+Always quote paths:
+cp "$source" "$destination"
+
+Be extremely careful with:
+rm -rf
+find ... -delete
+```
