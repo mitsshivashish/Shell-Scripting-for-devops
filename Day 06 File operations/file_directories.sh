@@ -1,6 +1,20 @@
 #!/bin/bash
 # Directory Statistics Tool
 
+
+:'
+Task: Create a script that generates directory statistics!
+
+Requirements:
+
+- Count total files and directories
+- Calculate total size
+- Find largest file
+- Count files by extension
+- Show most recently modified files
+'
+
+
 dir_stats() {
     local dir="${1:-.}"
 
