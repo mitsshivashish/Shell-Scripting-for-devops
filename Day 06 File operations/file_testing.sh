@@ -26,6 +26,25 @@ sample_file="$test_dir/test_file.txt"
 
 [[ -s $sample_file ]] &&  echo "File is not empty" || echo "File is empty"
 
+
+config_file="config.txt"
+missing_keys=0
+
+
+for key in "host" "port"; do
+    
+    if ! grep -q "^${key}=" "$config_file" 2>/dev/null; then
+        echo "❌ Error: Required key '$key' is missing!"
+        missing_keys=$((missing_keys + 1))
+    fi
+done
+
+if [[ $missing_keys -eq 0 ]]; then
+    echo "All required keys exist!"
+fi
+
+
+
 }
 
 create_local
