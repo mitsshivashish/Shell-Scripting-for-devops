@@ -111,3 +111,132 @@ Regular expressions (regex) are patterns used to search, extract, validate, and 
 4. Use `sed -E` for regex-based transformations.
 5. Escape special characters when you need their literal meaning.
 6. Remember: `grep` searches/extracts; `sed` transforms.
+
+
+# Regular Expressions — Bash Cheatsheet
+
+Regular expressions (regex) are patterns used to search, extract, and transform text using `grep -E` and `sed -E`.
+
+## grep -E
+
+`grep -E` enables Extended Regular Expressions (ERE).
+
+    grep -E 'pattern' file
+    grep -Eo 'pattern' file
+
+## Regex Patterns
+
+    ^        → Start of line
+    $        → End of line
+    .        → Any character
+    *        → Zero or more
+    +        → One or more
+    ?        → Zero or one
+    [abc]    → a, b, or c
+    [a-z]    → Character range
+    [0-9]    → Digit
+    {n}      → Exactly n times
+    {n,m}    → Between n and m times
+    |        → OR
+    (...)    → Group / capture
+    \        → Escape special character
+
+## Examples
+
+    # Extract email addresses
+    grep -Eo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' data.txt
+
+    # Lines starting with lowercase names
+    grep -E '^[a-z]+' data.txt
+
+    # Extract ID
+    echo 'user:alice id:42' | grep -oE 'id:[0-9]+'
+
+    # Case-insensitive search
+    grep -i 'foo' words.txt
+
+    # Whole-word match
+    grep -w 'foo' words.txt
+
+    # Invert match
+    grep -v 'bar' words.txt
+
+    # Show line numbers
+    grep -n 'foo' words.txt
+
+## sed -E
+
+`sed -E` enables extended regex and is mainly used to transform text.
+
+    sed -E 's/old/new/g' file
+
+    s → Substitute
+    g → Replace all matches on each line
+
+## Capture Groups
+
+    sed -E 's/(\b[0-9]{3})-([0-9]{3})-([0-9]{4})/\1-XXX-\3/g' data.txt
+
+    (...) → Capture group
+    \1    → First captured group
+    \2    → Second captured group
+    \3    → Third captured group
+
+    555-123-4567 → 555-XXX-4567
+
+## Select Matching Lines
+
+    sed -n '/@example\.org/p' data.txt
+
+    -n → Suppress normal output
+    /p → Print matching lines
+
+## grep Options
+
+    -E → Extended regex
+    -i → Case-insensitive
+    -w → Whole-word match
+    -o → Output only matches
+    -v → Invert match
+    -n → Show line numbers
+    -F → Fixed-string matching
+
+## grep vs sed
+
+    grep → Search / filter / extract
+    sed  → Search / replace / transform
+
+## Quick Regex Reference
+
+    ^pattern       → Starts with pattern
+    pattern$       → Ends with pattern
+    [a-z]          → Lowercase letter
+    [A-Z]          → Uppercase letter
+    [0-9]          → Digit
+    [0-9]+         → One or more digits
+    [0-9]{3}       → Exactly 3 digits
+    foo|bar        → foo OR bar
+    (foo)          → Group / capture
+    \.             → Literal dot
+    .*             → Any number of characters
+
+## Important Notes
+
+    grep -E → ERE support
+    grep -P → PCRE; may not be available everywhere
+    grep -o → Extract only matching text
+    grep -n → Show line numbers
+    grep -F → Fixed-string matching
+
+> Use `-o` to extract only matches and `-n` to show line numbers.
+
+> Some shells may alias `grep`; prefer explicit flags such as `-E` and `-F` for clarity.
+
+## Golden Rules
+
+1. Use `grep -E` for extended regex searching.
+2. Use `grep -o` when you only need matched text.
+3. Use `grep -n` when line numbers are useful.
+4. Use `sed -E` for regex-based transformations.
+5. Escape special characters when you need their literal meaning.
+6. Remember: `grep` searches/extracts; `sed` transforms.
