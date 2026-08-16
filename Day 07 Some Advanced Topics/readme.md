@@ -779,3 +779,117 @@ file_{01..03}.txt   → Generate filename patterns
 Brace expansion is **shell-level text generation**.
 
 Use it when you need to quickly generate ranges, lists, combinations, or templated names before a command executes.
+
+
+
+# Parameter Expansion (Advanced) — Bash Cheatsheet
+
+Advanced parameter expansion lets you perform string slicing, pattern trimming, and substitutions directly inside the shell without external commands.
+
+## Slicing
+
+text="abcdefg"
+
+${text:2}       → From index 2 to the end
+${text:2:4}     → Start at index 2, take 4 characters
+${text:0:1}     → First character
+
+Slicing is zero-based.
+
+Example:
+
+echo "${text:2}"
+echo "${text:2:4}"
+
+## Pattern Trimming
+
+path="/usr/local/bin/bash"
+
+${path#*/}      → Remove shortest match from the front
+${path##*/}     → Remove longest match from the front
+${path%/*}      → Remove shortest match from the back
+${path%%/*}     → Remove longest match from the back
+
+Example:
+
+echo "${path#*/}"
+echo "${path##*/}"
+echo "${path%/*}"
+echo "${path%%/*}"
+
+For:
+
+/usr/local/bin/bash
+
+${path##*/} → bash
+
+## String Replacement
+
+name="hello_world_world"
+
+${name/_/-}      → Replace first `_`
+${name//_/-}    → Replace all `_`
+
+Example:
+
+echo "${name/_/-}"
+echo "${name//_/-}"
+
+Result:
+
+hello-world_world
+hello-world-world
+
+## Quick Reference
+
+${var:start}         → Slice from index
+${var:start:length}  → Slice with length
+${var#pattern}       → Remove shortest matching prefix
+${var##pattern}      → Remove longest matching prefix
+${var%pattern}       → Remove shortest matching suffix
+${var%%pattern}      → Remove longest matching suffix
+${var/old/new}       → Replace first match
+${var//old/new}      → Replace all matches
+
+## Pattern Matching
+
+Parameter expansion uses **glob-style patterns**, not full regex.
+
+* → Any number of characters
+? → One character
+[abc] → Character class
+[a-z] → Character range
+
+Example:
+
+file="project_backup.tar.gz"
+
+echo "${file##*.}"    # gz
+echo "${file%.*}"     # project_backup.tar
+
+## Important Notes
+
+- Use `${var}` when concatenating variables to avoid ambiguity.
+- Slicing indexes are zero-based.
+- `${var:0:1}` means the first character.
+- Pattern trimming uses glob-like patterns, not regex.
+- Use `grep`/`sed`/regex when you need full regular-expression processing.
+- Parameter expansion happens inside the shell and avoids unnecessary external commands.
+
+## Common Mistakes
+
+Wrong assumption:
+
+${text:2:4}
+
+does NOT mean characters 2 through 4. It means:
+
+Start at index 2 → Take 4 characters.
+
+Also, do not expect regex syntax to work as parameter-expansion patterns.
+
+## Golden Rule
+
+**Slice → Trim → Replace**
+
+Use parameter expansion when simple string manipulation can be handled directly by Bash instead of calling external tools.
