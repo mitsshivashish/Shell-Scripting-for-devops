@@ -567,3 +567,119 @@ bg      → Resume job in background (interactive)
 **Start → Save PID → Wait**
 
 Use `&` for concurrency, `$!` to track jobs, and `wait` to synchronize them.
+
+
+# Debugging — Bash Cheatsheet
+
+Bash debugging helps you trace commands, fail fast on errors, and detect unset variables early.
+
+## set -x — Trace Commands
+
+set -x
+a=10
+echo $((a+5))
+set +x
+
+set -x → Shows commands before execution.
+set +x → Disables tracing.
+
+## set -e — Exit on Error
+
+set -e
+echo "ok"
+false
+echo "never"
+
+set -e → Exits when a command returns a non-zero status.
+
+Example:
+
+( set -e; echo ok; false; echo never ) || echo "caught failure"
+
+Note: set -e has edge cases with pipelines, conditions, and subshells. Use explicit checks when precise behavior is required.
+
+## set -u — Unset Variables
+
+set -u
+foo=bar
+echo "$foo"
+
+set -u → Treats unset variables as errors and helps catch missing variables or typos.
+
+## Strict Mode
+
+set -euo pipefail
+
+-e → Exit on error
+-u → Error on unset variables
+pipefail → Pipeline fails if any command in it fails
+
+## Subshells
+
+Use a subshell when you want debugging options to affect only a specific section:
+
+(
+    set -euo pipefail
+    # commands
+)
+
+This prevents the options from unintentionally affecting the whole script.
+
+## PS4 — Better Trace Output
+
+PS4='+ :: '
+set -x
+
+echo "Debugging..."
+
+set +x
+
+PS4 → Controls the prefix displayed by set -x.
+
+## Useful Commands
+
+bash -x script.sh       # Run with tracing
+bash -n script.sh       # Syntax check without executing
+
+set -x                  # Enable tracing
+set +x                  # Disable tracing
+set -e                  # Exit on error
+set +e                  # Disable exit-on-error
+set -u                  # Detect unset variables
+set +u                  # Disable unset-variable checking
+set -o pipefail         # Detect pipeline failures
+
+## Common Mistakes
+
+set -e alone → Does not reliably catch every pipeline failure.
+
+Use:
+
+set -o pipefail
+
+for pipelines, and use explicit exit-status checks when needed.
+
+## Important Notes
+
+- Prefer set -euo pipefail when appropriate for strict scripts.
+- Use subshells if you don't want options affecting the entire script.
+- set -e has edge cases; don't blindly rely on it for every error scenario.
+- Use pipefail to detect failures inside pipelines.
+- Never expose passwords, tokens, API keys, or other secrets with set -x, especially in CI/CD logs.
+- bash -n is useful for checking syntax before execution.
+
+## Quick Reference
+
+-x           → Trace commands
+-e           → Exit on error
+-u           → Detect unset variables
+-o pipefail  → Detect pipeline failures
+PS4          → Customize xtrace prefix
+bash -x      → Trace a script
+bash -n      → Syntax check only
+
+## Golden Rule
+
+Trace → Detect → Fail Fast → Fix
+
+Use set -x to see what runs, set -e to fail fast, set -u to catch missing variables, and pipefail to catch pipeline failures.
