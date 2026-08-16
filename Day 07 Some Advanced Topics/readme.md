@@ -683,3 +683,99 @@ bash -n      → Syntax check only
 Trace → Detect → Fail Fast → Fix
 
 Use set -x to see what runs, set -e to fail fast, set -u to catch missing variables, and pipefail to catch pipeline failures.
+
+
+# Brace Expansion — Bash Cheatsheet
+
+Brace expansion builds lists of text before command execution. It is useful for ranges, permutations, and generating templated filenames.
+
+## Basic Syntax
+
+echo {1..5}
+echo {a..d}
+
+Output:
+
+1 2 3 4 5
+a b c d
+
+## Ranges
+
+echo {1..5}              # 1 to 5
+echo {a..d}              # a to d
+echo {01..12}            # Zero-padded range
+
+Zero-padding is useful for filenames that need consistent numbering.
+
+Example:
+
+echo file_{01..03}.txt
+
+Expands to:
+
+file_01.txt file_02.txt file_03.txt
+
+## Lists / Combinations
+
+Use commas inside braces to create alternatives:
+
+echo {sun,mon,tue}_report
+
+Expands to:
+
+sun_report mon_report tue_report
+
+Brace expansion can also create combinations:
+
+echo {dev,prod}_{web,db}
+
+Expands to:
+
+dev_web dev_db prod_web prod_db
+
+## Important Rules
+
+- Brace expansion happens in the shell before the command runs.
+- It is syntactic expansion; it does not evaluate variables inside braces.
+- Use `{}` for brace expansion, not `()`.
+- Separate list items with commas.
+- Use zero-padded ranges such as `{01..12}` for aligned filenames.
+- External commands do not perform brace expansion; the shell does it first.
+
+## Common Mistake
+
+Brace expansion does NOT perform runtime variable evaluation.
+
+For example:
+
+x=5
+echo {1..$x}
+
+Do not expect this to behave like a dynamic range. Brace expansion is performed before normal variable expansion.
+
+## Brace Expansion vs Globbing
+
+Brace expansion creates text lists:
+
+echo file_{01..03}.txt
+
+Globbing matches existing filesystem paths:
+
+echo *.txt
+
+Brace expansion happens first, and the resulting paths may then be affected by globbing.
+
+## Quick Reference
+
+{1..5}              → Numeric range
+{a..d}              → Character range
+{01..12}            → Zero-padded range
+{a,b,c}             → List of alternatives
+{dev,prod}_{web,db} → Combinations
+file_{01..03}.txt   → Generate filename patterns
+
+## Golden Rule
+
+Brace expansion is **shell-level text generation**.
+
+Use it when you need to quickly generate ranges, lists, combinations, or templated names before a command executes.
