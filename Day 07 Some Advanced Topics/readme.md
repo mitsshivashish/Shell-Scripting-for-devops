@@ -453,3 +453,117 @@ trap -l                     → List available signals
 **Create → Trap → Cleanup → Exit**
 
 Use `trap` whenever your script creates temporary files, processes, or other resources that must be cleaned up when the script exits.
+
+
+# Background Jobs — Bash Cheatsheet
+
+Background jobs let Bash run tasks concurrently using `&`. Track their PIDs with `$!` and use `wait` to wait for completion. In non-interactive scripts, prefer `wait` instead of `fg/bg`.
+
+## Start Background Jobs
+
+command &
+
+`&` → Runs the command in the background.
+
+Example:
+
+long_task() {
+    echo "[$1] start"
+    sleep "$2"
+    echo "[$1] done"
+}
+
+long_task A 1 &
+pid1=$!
+
+long_task B 2 &
+pid2=$!
+
+`$!` → PID of the most recent background command.
+
+## Wait for Jobs
+
+wait "$pid1" "$pid2"
+
+`wait` → Pauses the script until the specified background jobs finish.
+
+Example:
+
+echo "Waiting for jobs $pid1 and $pid2"
+wait "$pid1" "$pid2"
+echo "All jobs finished"
+
+## Complete Example
+
+#!/usr/bin/env bash
+
+long_task() {
+    echo "[$1] start"
+    sleep "$2"
+    echo "[$1] done"
+}
+
+long_task A 1 &
+pid1=$!
+
+long_task B 2 &
+pid2=$!
+
+echo "Waiting for jobs $pid1 and $pid2"
+wait "$pid1" "$pid2"
+
+echo "All jobs finished"
+
+## Useful Commands
+
+command &       → Run command in background
+$!              → PID of latest background job
+wait PID        → Wait for a specific job
+wait PID1 PID2  → Wait for multiple jobs
+wait            → Wait for all currently known background jobs
+
+## Why Use Background Jobs?
+
+- Run independent tasks concurrently.
+- Reduce total execution time.
+- Run multiple servers, files, or processes at the same time.
+- Useful for parallel automation tasks.
+
+Example:
+
+task1 &
+task2 &
+task3 &
+wait
+
+Without background execution, tasks run one after another. With `&`, they can run concurrently and `wait` ensures the script doesn't continue until they finish.
+
+## Logging
+
+Use descriptive logs with job IDs and timestamps:
+
+echo "[$(date '+%H:%M:%S')] Starting job A"
+
+This makes parallel jobs easier to monitor and debug.
+
+## Important Notes
+
+- `$!` only refers to the most recently started background process.
+- Save each PID immediately after starting the job.
+- Use `wait` to ensure background tasks finish before continuing.
+- `fg` and `bg` depend on interactive job control and may not work in non-interactive scripts.
+- Prefer `wait` in automation, CI/CD, and other non-interactive environments.
+
+## Quick Reference
+
+&       → Run in background
+$!      → Get latest background PID
+wait    → Wait for completion
+fg      → Bring job to foreground (interactive)
+bg      → Resume job in background (interactive)
+
+## Golden Rule
+
+**Start → Save PID → Wait**
+
+Use `&` for concurrency, `$!` to track jobs, and `wait` to synchronize them.
