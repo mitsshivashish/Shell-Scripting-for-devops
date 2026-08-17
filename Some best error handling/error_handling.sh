@@ -1,5 +1,17 @@
 #!/bin/bash
 
+: '
+Task: Create a script with comprehensive error handling!
+
+Requirements:
+
+- Use set -euo pipefail
+- Validate input file exists
+- Use trap for cleanup
+- Provide meaningful error messages
+- Return appropriate exit codes
+'
+
 set -euo pipefail
 
 readonly EXIT_SUCCESS=0
