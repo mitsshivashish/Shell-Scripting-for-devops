@@ -836,4 +836,382 @@ test_files_copied() {
     assert_equals "$original" "$copied" "File content preserved"
 }
 ```
+
+
+| Line | Explanation |
+|---|---|
+| `test_files_copied() {` | Defines this test case. |
+| `echo "Test: Files are copied to destination"` | Label for output. |
+| `$SCRIPT_UNDER_TEST "$TEST_DIR/source" "$TEST_DIR/dest" >/dev/null 2>&1` | Runs the script again (this test needs its own fresh run since each test function is independent). |
+| `assert_file_exists "$TEST_DIR/dest/file1.txt"` | Confirms the first file made it to the destination. |
+| `assert_file_exists "$TEST_DIR/dest/file2.txt"` | Confirms the second file made it too. |
+| `local original=$(cat "$TEST_DIR/source/file1.txt")` | Reads the original file's contents into a variable using `cat` inside command substitution. |
+| `local copied=$(cat "$TEST_DIR/dest/file1.txt")` | Reads the copied file's contents the same way. |
+| `assert_equals "$original" "$copied" "File content preserved"` | Confirms the content wasn't corrupted or altered during the copy — checking substance, not just existence. |
+| `}` | Closes the function. |
  
+```bash
+# Test: Error on missing source
+test_missing_source_fails() {
+    echo "Test: Missing source returns error"
+ 
+    $SCRIPT_UNDER_TEST "/nonexistent" "$TEST_DIR/dest" >/dev/null 2>&1
+    local exit_code=$?
+ 
+    assert_true "[[ $exit_code -ne 0 ]]" "Should fail with non-zero exit"
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `test_missing_source_fails() {` | Defines this test case. |
+| `echo "Test: Missing source returns error"` | Label for output. |
+| `$SCRIPT_UNDER_TEST "/nonexistent" "$TEST_DIR/dest" >/dev/null 2>&1` | Deliberately passes a source path that doesn't exist, to check the script's error handling. |
+| `local exit_code=$?` | Captures the resulting exit code. |
+| `assert_true "[[ $exit_code -ne 0 ]]" "Should fail with non-zero exit"` | Passes a **condition string** to `assert_true` (recall it uses `eval`). The condition checks that the exit code is *not* zero — i.e., the script correctly reported failure instead of silently succeeding. |
+| `}` | Closes the function. |
+ 
+```bash
+# Test: Help flag works
+test_help_flag() {
+    echo "Test: Help flag shows usage"
+ 
+    local output=$($SCRIPT_UNDER_TEST --help 2>&1)
+ 
+    assert_true "[[ \"$output\" == *\"Usage\"* ]]" "Help contains Usage"
+    assert_true "[[ \"$output\" == *\"--help\"* ]]" "Help mentions --help"
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `test_help_flag() {` | Defines this test case. |
+| `echo "Test: Help flag shows usage"` | Label for output. |
+| `local output=$($SCRIPT_UNDER_TEST --help 2>&1)` | Runs the script with `--help` and captures **both** stdout and stderr (`2>&1`) into `output`, since help text sometimes goes to either stream depending on how the script was written. |
+| `assert_true "[[ \"$output\" == *\"Usage\"* ]]" "Help contains Usage"` | Builds a condition string checking whether `$output` contains the word "Usage" (glob pattern match). The backslash-escaped quotes (`\"`) are needed because this whole condition is itself inside a double-quoted string being passed as an argument. |
+| `assert_true "[[ \"$output\" == *\"--help\"* ]]" "Help mentions --help"` | Same pattern, checking the help text also mentions the `--help` flag itself. |
+| `}` | Closes the function. |
+ 
+```bash
+# Main test runner
+main() {
+    echo "=== Integration Tests for backup.sh ==="
+    echo ""
+ 
+    setup
+    trap teardown EXIT
+ 
+    local tests_failed=0
+ 
+    test_script_runs || ((tests_failed++))
+    test_files_copied || ((tests_failed++))
+    test_missing_source_fails || ((tests_failed++))
+    test_help_flag || ((tests_failed++))
+ 
+    echo ""
+    echo "=== Results ==="
+    if [[ $tests_failed -eq 0 ]]; then
+        echo "All integration tests passed!"
+        exit 0
+    else
+        echo "Failed tests: $tests_failed"
+        exit 1
+    fi
+}
+ 
+main
+```
+ 
+| Line | Explanation |
+|---|---|
+| `main() {` | Defines the top-level orchestrator function. |
+| `echo "=== Integration Tests for backup.sh ==="` | Prints a banner header. |
+| `echo ""` | Blank line for spacing. |
+| `setup` | Calls the setup function once, before any tests run, creating the test environment. |
+| `trap teardown EXIT` | Registers `teardown` to automatically run whenever this script exits — for **any** reason (normal completion, error, or interruption). This guarantees the temp directory always gets cleaned up. |
+| `local tests_failed=0` | Initializes the failure counter. |
+| `test_script_runs \|\| ((tests_failed++))` | Runs the test; increments the counter if it failed. |
+| `test_files_copied \|\| ((tests_failed++))` | Same for the next test. |
+| `test_missing_source_fails \|\| ((tests_failed++))` | Same. |
+| `test_help_flag \|\| ((tests_failed++))` | Same. |
+| `echo ""` | Blank line before the summary. |
+| `echo "=== Results ==="` | Section header for results. |
+| `if [[ $tests_failed -eq 0 ]]; then` | Checks if no tests failed. |
+| `echo "All integration tests passed!"` | Success message. |
+| `exit 0` | Exits the entire script with success status — this also triggers the `trap`, running `teardown`. |
+| `else` | Otherwise... |
+| `echo "Failed tests: $tests_failed"` | Reports the count of failed tests. |
+| `exit 1` | Exits with failure status (also triggers `teardown` via the trap). |
+| `fi` | Ends the `if`. |
+| `}` | Closes `main`. |
+| `main` | Calls `main`, which is what actually kicks off everything when the script runs. |
+ 
+---
+ 
+## Test Frameworks: BATS (Bash Automated Testing System)
+ 
+For larger projects, use dedicated testing frameworks.
+ 
+```bash
+# test_backup.bats
+ 
+# Setup runs before each test
+setup() {
+    TEST_DIR="$(mktemp -d)"
+    mkdir -p "$TEST_DIR"/{source,dest}
+    echo "content" > "$TEST_DIR/source/file.txt"
+}
+ 
+# Teardown runs after each test
+teardown() {
+    rm -rf "$TEST_DIR"
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `# test_backup.bats` | Comment noting the filename — BATS files conventionally end in `.bats`. |
+| `setup() {` | In BATS, this special function name runs automatically **before every single `@test` block**, not once for the whole file. |
+| `TEST_DIR="$(mktemp -d)"` | `mktemp -d` creates a real, guaranteed-unique temporary directory and prints its path, which is captured into `TEST_DIR`. (Note: no `local`/`readonly` here — BATS variables are typically left as regular globals so they're visible inside each `@test` block.) |
+| `mkdir -p "$TEST_DIR"/{source,dest}` | Creates `source` and `dest` subdirectories using brace expansion, same as before. |
+| `echo "content" > "$TEST_DIR/source/file.txt"` | Creates one sample file with known content. |
+| `}` | Closes `setup`. |
+| `teardown() {` | This special function name runs automatically **after every `@test` block**. |
+| `rm -rf "$TEST_DIR"` | Deletes the temp directory. |
+| `}` | Closes `teardown`. |
+ 
+```bash
+@test "backup creates destination directory" {
+    run ./backup.sh "$TEST_DIR/source" "$TEST_DIR/newdest"
+    [ "$status" -eq 0 ]
+    [ -d "$TEST_DIR/newdest" ]
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `@test "backup creates destination directory" {` | BATS syntax defining one test case; the quoted string is its human-readable name shown in test output. |
+| `run ./backup.sh "$TEST_DIR/source" "$TEST_DIR/newdest"` | `run` is a BATS built-in: it executes the given command, then — instead of letting failures stop the script — captures its exit code into `$status` and its combined output into `$output`, so you can assert on them. |
+| `[ "$status" -eq 0 ]` | Plain Bash test (single brackets) checking the exit code was `0`. In BATS, any failing `[ ]` or `[[ ]]` inside a `@test` block marks that test as failed. |
+| `[ -d "$TEST_DIR/newdest" ]` | Checks that the destination directory was actually created (`-d` = "is a directory"). |
+| `}` | Closes the test block. |
+ 
+```bash
+@test "backup copies files correctly" {
+    run ./backup.sh "$TEST_DIR/source" "$TEST_DIR/dest"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_DIR/dest/file.txt" ]
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `@test "backup copies files correctly" {` | Defines this test case. |
+| `run ./backup.sh "$TEST_DIR/source" "$TEST_DIR/dest"` | Runs the script, capturing status/output. |
+| `[ "$status" -eq 0 ]` | Confirms clean exit. |
+| `[ -f "$TEST_DIR/dest/file.txt" ]` | Confirms the file exists at the destination (`-f` = "is a regular file"). |
+| `}` | Closes the test block. |
+ 
+```bash
+@test "backup preserves file content" {
+    ./backup.sh "$TEST_DIR/source" "$TEST_DIR/dest"
+ 
+    original=$(cat "$TEST_DIR/source/file.txt")
+    copied=$(cat "$TEST_DIR/dest/file.txt")
+    [ "$original" = "$copied" ]
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `@test "backup preserves file content" {` | Defines this test case. |
+| `./backup.sh "$TEST_DIR/source" "$TEST_DIR/dest"` | Runs the script directly (no `run` here, since this test doesn't need `$status`/`$output` — it just needs the side effect of the copy happening). |
+| `original=$(cat "$TEST_DIR/source/file.txt")` | Reads the original file's content. |
+| `copied=$(cat "$TEST_DIR/dest/file.txt")` | Reads the copied file's content. |
+| `[ "$original" = "$copied" ]` | Single-bracket string equality check (`=`, not `==`, is the POSIX-compatible form) confirming content matches exactly. |
+| `}` | Closes the test block. |
+ 
+```bash
+@test "backup fails on missing source" {
+    run ./backup.sh "/nonexistent" "$TEST_DIR/dest"
+    [ "$status" -ne 0 ]
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `@test "backup fails on missing source" {` | Defines this test case. |
+| `run ./backup.sh "/nonexistent" "$TEST_DIR/dest"` | Runs the script with an invalid source path. |
+| `[ "$status" -ne 0 ]` | Confirms the exit code was **not** zero — i.e., it correctly failed. |
+| `}` | Closes the test block. |
+ 
+```bash
+@test "help flag shows usage information" {
+    run ./backup.sh --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Usage"* ]]
+}
+```
+ 
+| Line | Explanation |
+|---|---|
+| `@test "help flag shows usage information" {` | Defines this test case. |
+| `run ./backup.sh --help` | Runs the script with `--help`, capturing status and output. |
+| `[ "$status" -eq 0 ]` | Confirms `--help` exits cleanly (not as an error). |
+| `[[ "$output" == *"Usage"* ]]` | Uses double-bracket glob matching (needed here since single brackets don't support `*` patterns the same way) to confirm the captured output mentions "Usage". |
+| `}` | Closes the test block. |
+ 
+### Installing and running BATS
+ 
+```bash
+# macOS
+brew install bats-core
+ 
+# Linux (apt)
+sudo apt install bats
+ 
+# Run tests
+bats test_backup.bats
+```
+ 
+| Line | Explanation |
+|---|---|
+| `brew install bats-core` | Installs BATS via Homebrew on macOS. |
+| `sudo apt install bats` | Installs BATS via APT on Debian/Ubuntu-based Linux, with elevated (`sudo`) permissions required for system package installation. |
+| `bats test_backup.bats` | Runs the BATS executable against the test file, executing every `@test` block and printing a pass/fail report for each. |
+ 
+---
+ 
+## CI/CD Integration
+ 
+Run tests automatically on every commit.
+ 
+```yaml
+# .github/workflows/test.yml
+name: Test Bash Scripts
+ 
+on: [push, pull_request]
+ 
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+ 
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+ 
+      - name: Run ShellCheck
+        run: |
+          shellcheck scripts/*.sh
+ 
+      - name: Run unit tests
+        run: |
+          bats tests/
+ 
+      - name: Run integration tests
+        run: |
+          ./tests/integration/run_all.sh
+```
+ 
+| Line | Explanation |
+|---|---|
+| `# .github/workflows/test.yml` | Comment noting the required file path/name for GitHub Actions to detect this workflow. |
+| `name: Test Bash Scripts` | The display name for this workflow, shown in GitHub's Actions UI. |
+| `on: [push, pull_request]` | Defines the triggers: run this workflow whenever code is pushed, or a pull request is opened/updated. |
+| `jobs:` | Starts the list of jobs (a workflow can have multiple; here there's one). |
+| `test:` | The name/ID of this job. |
+| `runs-on: ubuntu-latest` | Specifies the virtual machine image to run the job on — the latest Ubuntu Linux runner GitHub provides. |
+| `steps:` | Starts the ordered list of steps this job executes. |
+| `- uses: actions/checkout@v3` | Uses a pre-built GitHub Action that checks out (downloads) the repository's code onto the runner, so subsequent steps can access it. |
+| `- name: Install BATS` | A human-readable label for this step, shown in the Actions log. |
+| `run: \|` | Indicates the following indented lines are shell commands to execute (the `\|` preserves line breaks in the YAML block). |
+| `sudo apt-get update` | Refreshes the list of available packages before installing. |
+| `sudo apt-get install -y bats` | Installs BATS; `-y` auto-confirms the installation prompt (needed since this runs non-interactively). |
+| `- name: Run ShellCheck` | Label for the next step. |
+| `run: \|` / `shellcheck scripts/*.sh` | Runs ShellCheck against every `.sh` file in the `scripts/` directory; if it finds serious issues, this step (and the whole workflow) fails. |
+| `- name: Run unit tests` | Label for the next step. |
+| `run: \|` / `bats tests/` | Runs BATS against every `.bats` file inside the `tests/` directory. |
+| `- name: Run integration tests` | Label for the final step. |
+| `run: \|` / `./tests/integration/run_all.sh` | Executes a separate shell script that presumably runs the integration test suite shown earlier. |
+ 
+---
+ 
+## ShellCheck Integration
+ 
+```bash
+# Run ShellCheck on all scripts
+shellcheck scripts/*.sh
+ 
+# Ignore specific warnings
+# shellcheck disable=SC2086
+echo $unquoted_var
+ 
+# Check with severity level
+shellcheck --severity=warning scripts/*.sh
+```
+ 
+| Line | Explanation |
+|---|---|
+| `shellcheck scripts/*.sh` | Runs the ShellCheck static analyzer against every file matching the glob `scripts/*.sh`, reporting potential bugs and bad practices without executing any of the scripts. |
+| `# shellcheck disable=SC2086` | A special directive comment (must be placed directly above the offending line) telling ShellCheck to suppress warning code `SC2086` ("double quote to prevent globbing/word splitting") for the next line only. |
+| `echo $unquoted_var` | An intentionally unquoted variable — normally ShellCheck would flag this as risky, but the directive above suppresses that specific warning here. |
+| `shellcheck --severity=warning scripts/*.sh` | Runs ShellCheck but only reports issues at `warning` severity or higher (hiding lower-priority `info`/`style` suggestions). |
+ 
+---
+ 
+## Common Mistakes
+ 
+### 1. Not isolating tests
+ 
+```bash
+# Wrong - tests affect each other
+test1() {
+    create_file "/tmp/test.txt"  # Left behind!
+}
+ 
+# Correct - use setup/teardown
+setup() { TEST_DIR=$(mktemp -d); }
+teardown() { rm -rf "$TEST_DIR"; }
+trap teardown EXIT
+```
+ 
+| Line | Explanation |
+|---|---|
+| `test1() {` | Defines a poorly-written test. |
+| `create_file "/tmp/test.txt"  # Left behind!` | Creates a file at a **fixed, shared path**. The inline comment flags the bug: nothing ever deletes this file, so it persists after the test and can interfere with later runs or other tests. |
+| `}` | Closes the (flawed) function. |
+| `setup() { TEST_DIR=$(mktemp -d); }` | The fix: a one-line function that creates a fresh, uniquely-named temp directory for each test run (written on one line using `{ ; }` syntax). |
+| `teardown() { rm -rf "$TEST_DIR"; }` | Deletes that directory afterward. |
+| `trap teardown EXIT` | Ensures `teardown` runs automatically on script exit, even if something fails partway through — so cleanup is guaranteed rather than dependent on remembering to call it manually. |
+ 
+### 2. Testing implementation, not behavior
+ 
+```bash
+# Wrong - tests internal details
+assert_equals "grep" "$SEARCH_COMMAND"
+ 
+# Correct - test the outcome
+result=$(search_for "pattern" "file.txt")
+assert_equals "found" "$result"
+```
+ 
+| Line | Explanation |
+|---|---|
+| `assert_equals "grep" "$SEARCH_COMMAND"` | A poor test — it checks that some internal variable literally holds the string `"grep"`, meaning it verifies *which tool* was used internally, not *what result* was produced. |
+| `result=$(search_for "pattern" "file.txt")` | The better approach: call the actual function being tested and capture what it returns. |
+| `assert_equals "found" "$result"` | Assert on the **outcome** ("was the pattern found?") rather than the internal mechanism. This means the test still passes if the implementation is later refactored (e.g., swapping `grep` for `awk`) as long as behavior is unchanged. |
+ 
+---
+ 
+## Summary
+ 
+- **Assertions** — build simple assert functions for quick checks
+- **Unit Tests** — test functions in isolation
+- **Integration** — test scripts end-to-end with setup/teardown
+- **BATS** — use for larger projects with many tests
+- **ShellCheck** — static analysis catches bugs early
+- **CI/CD** — automate testing on every commit
+  
