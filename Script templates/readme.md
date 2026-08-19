@@ -244,3 +244,282 @@ parse_args() {
     # Remaining args are positional
     target="${1:-}"
 }
+
+# ==============================================================================
+# VALIDATION
+# ==============================================================================
+ 
+validate_args() {
+    [[ -z "$target" ]] && {
+        log_error "Missing required argument: target"
+        echo "Try '$SCRIPT_NAME --help' for usage." >&2
+        exit $EXIT_USAGE
+    }
+ 
+    [[ -n "$config_file" && ! -f "$config_file" ]] && {
+        die "Config file not found: $config_file"
+    }
+}
+ 
+# ==============================================================================
+# CLEANUP
+# ==============================================================================
+ 
+cleanup() {
+    log_debug "Cleaning up..."
+    # Add cleanup tasks here
+}
+ 
+trap cleanup EXIT
+ 
+# ==============================================================================
+# MAIN LOGIC
+# ==============================================================================
+ 
+do_work() {
+    log_info "Processing target: $target"
+ 
+    if [[ "$dry_run" == "true" ]]; then
+        log_info "[DRY RUN] Would process $target"
+        return 0
+    fi
+ 
+    # Main logic here
+    log_debug "Doing the work..."
+ 
+    log_info "Done!"
+}
+ 
+# ==============================================================================
+# ENTRY POINT
+# ==============================================================================
+ 
+main() {
+    parse_args "$@"
+    validate_args
+    do_work
+}
+ 
+# Only run main if executed (not sourced)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
+```
+ 
+---
+ 
+## Library/Module Template
+ 
+For reusable functions that get sourced by other scripts.
+ 
+```bash
+#!/usr/bin/env bash
+#
+# lib-name.sh - Reusable library for [purpose]
+#
+# Usage: source lib-name.sh
+#
+# Provides:
+#   function1 - Description
+#   function2 - Description
+#
+ 
+# Prevent double-sourcing
+[[ -n "${_LIB_NAME_LOADED:-}" ]] && return 0
+readonly _LIB_NAME_LOADED=1
+ 
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+ 
+# Library defaults (can be overridden before sourcing)
+: "${LIB_DEBUG:=false}"
+: "${LIB_LOG_FILE:=}"
+ 
+# ==============================================================================
+# INTERNAL FUNCTIONS
+# ==============================================================================
+ 
+_lib_log() {
+    [[ "$LIB_DEBUG" == "true" ]] && echo "[lib-name] $*" >&2
+}
+ 
+_lib_validate() {
+    # Internal validation
+    :
+}
+ 
+# ==============================================================================
+# PUBLIC API
+# ==============================================================================
+ 
+# @description Does something useful
+# @param $1 input - The input value
+# @return 0 on success, 1 on failure
+# @example
+#   result=$(lib_function1 "input")
+lib_function1() {
+    local input="${1:?Usage: lib_function1 <input>}"
+ 
+    _lib_log "Processing: $input"
+ 
+    # Implementation
+    echo "Processed: $input"
+    return 0
+}
+ 
+# @description Another useful function
+# @param $1 arg1 - First argument
+# @param $2 arg2 - Second argument (optional)
+lib_function2() {
+    local arg1="$1"
+    local arg2="${2:-default}"
+ 
+    _lib_log "Args: $arg1, $arg2"
+ 
+    # Implementation
+    return 0
+}
+ 
+# ==============================================================================
+# INITIALIZATION
+# ==============================================================================
+ 
+_lib_validate
+ 
+# Self-test when run directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "Running lib-name.sh self-test..."
+    LIB_DEBUG=true
+ 
+    echo "Testing lib_function1:"
+    lib_function1 "test input"
+ 
+    echo "Testing lib_function2:"
+    lib_function2 "arg1" "arg2"
+ 
+    echo "All tests passed!"
+fi
+```
+ 
+---
+ 
+## Service/Daemon Template
+ 
+For long-running background scripts with signal handling.
+ 
+```bash
+#!/usr/bin/env bash
+#
+# service-name - Long-running service script
+#
+ 
+set -euo pipefail
+ 
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly PID_FILE="/var/run/${SCRIPT_NAME}.pid"
+readonly LOG_FILE="/var/log/${SCRIPT_NAME}.log"
+ 
+running=true
+ 
+# ==============================================================================
+# LOGGING
+# ==============================================================================
+ 
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$$] $*" | tee -a "$LOG_FILE"
+}
+ 
+# ==============================================================================
+# SIGNAL HANDLERS
+# ==============================================================================
+ 
+handle_shutdown() {
+    log "Received shutdown signal"
+    running=false
+}
+ 
+handle_reload() {
+    log "Reloading configuration..."
+    # Reload logic here
+}
+ 
+trap handle_shutdown SIGTERM SIGINT
+trap handle_reload SIGHUP
+ 
+# ==============================================================================
+# PID FILE MANAGEMENT
+# ==============================================================================
+ 
+create_pid_file() {
+    echo $$ > "$PID_FILE"
+    log "Created PID file: $PID_FILE"
+}
+ 
+remove_pid_file() {
+    rm -f "$PID_FILE"
+    log "Removed PID file"
+}
+ 
+check_already_running() {
+    if [[ -f "$PID_FILE" ]]; then
+        local pid=$(cat "$PID_FILE")
+        if kill -0 "$pid" 2>/dev/null; then
+            log "Already running with PID $pid"
+            exit 1
+        fi
+        log "Removing stale PID file"
+        rm -f "$PID_FILE"
+    fi
+}
+ 
+# ==============================================================================
+# MAIN LOOP
+# ==============================================================================
+ 
+do_work() {
+    # Your service logic here
+    log "Doing periodic work..."
+    sleep 1
+}
+ 
+main() {
+    check_already_running
+    create_pid_file
+ 
+    trap remove_pid_file EXIT
+ 
+    log "Service started"
+ 
+    while [[ "$running" == "true" ]]; do
+        do_work
+    done
+ 
+    log "Service stopped"
+}
+ 
+main "$@"
+```
+ 
+---
+ 
+## Template Comparison
+ 
+| Template | Best For | Features |
+|----------|----------|----------|
+| Minimal | Quick scripts, prototypes | Error handling, cleanup |
+| CLI | User-facing tools | Args, help, logging, validation |
+| Library | Reusable functions | Sourcing guard, documentation |
+| Service | Background processes | Signals, PID file, main loop |
+ 
+---
+ 
+## Summary
+ 
+- **Start with templates** — don't reinvent the wheel
+- **Minimal** — quick tasks with basic safety
+- **CLI** — full-featured command-line tools
+- **Library** — reusable code with source guard
+- **Service** — long-running with signal handling
+- **Customize** — add/remove features as needed
+ 
