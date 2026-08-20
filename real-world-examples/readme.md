@@ -75,3 +75,33 @@ Schedule daily backups with:
 
 # /etc/cron.d/backup
 0 2 * * * root /opt/scripts/backup.sh -s /var/data -d /backup -r 7 >> /var/log/backup.log 2>&1
+
+#!/usr/bin/env bash
+#
+# monitor.sh - System monitoring script demonstration
+#
+# This is a simplified demo that shows monitoring concepts.
+#
+
+set -euo pipefail
+
+echo "=== System Monitoring Demo ==="
+echo ""
+
+# Configuration
+WARN_CPU=80
+CRIT_CPU=90
+WARN_MEM=80
+CRIT_MEM=90
+WARN_DISK=80
+CRIT_DISK=90
+
+# Status codes
+readonly STATUS_OK=0
+readonly STATUS_WARN=1
+readonly STATUS_CRIT=2
+
+# Logging
+timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
