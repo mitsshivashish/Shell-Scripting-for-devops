@@ -221,3 +221,56 @@ case "${1:-deploy}" in
     rollback) rollback ;;
     *)        echo "Usage: $SCRIPT_NAME {deploy|rollback} [source]" ;;
 esac
+
+
+#!/usr/bin/env bash
+#
+# log-analyzer.sh - Analyze access logs and generate reports
+#
+set -euo pipefail
+
+readonly LOG_FILE="${1:-/var/log/nginx/access.log}"
+
+log() { echo "[$(date '+%H:%M:%S')] $*"; }
+
+analyze_logs() {
+    [[ -f "$LOG_FILE" ]] || { echo "Log file not found: $LOG_FILE"; exit 1; }
+
+    echo "=== Log Analysis Report ==="
+    echo "File: $LOG_FILE"
+    echo "Generated: $(date)"
+    echo ""
+
+    # Total requests
+    local total=$(wc -l < "$LOG_FILE")
+    echo "Total Requests: $total"
+    echo ""
+
+    # Requests per status code
+    echo "--- Status Codes ---"
+    awk '{print $9}' "$LOG_FILE" | sort | uniq -c | sort -rn | head -10
+    echo ""
+
+    # Top 10 IPs
+    echo "--- Top 10 IP Addresses ---"
+    awk '{print $1}' "$LOG_FILE" | sort | uniq -c | sort -rn | head -10
+    echo ""
+
+    # Top 10 URLs
+    echo "--- Top 10 URLs ---"
+    awk '{print $7}' "$LOG_FILE" | sort | uniq -c | sort -rn | head -10
+    echo ""
+
+    # Requests per hour
+    echo "--- Requests per Hour ---"
+    awk '{print $4}' "$LOG_FILE" | cut -d: -f2 | sort | uniq -c
+    echo ""
+
+    # Error rate
+    local errors=$(awk '$9 >= 400' "$LOG_FILE" | wc -l)
+    local error_rate=$(echo "scale=2; $errors * 100 / $total" | bc)
+    echo "Error Rate: $error_rate% ($errors errors)"
+}
+
+# Run with error handling
+analyze_logs 2>/dev/null || echo "Analysis failed"
