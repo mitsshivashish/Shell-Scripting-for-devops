@@ -105,3 +105,119 @@ readonly STATUS_CRIT=2
 timestamp() {
     date '+%Y-%m-%d %H:%M:%S'
 }
+
+#!/usr/bin/env bash
+#
+# deploy.sh - Application deployment with rollback
+#
+set -euo pipefail
+
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly DEPLOY_DIR="/var/www/app"
+readonly RELEASES_DIR="$DEPLOY_DIR/releases"
+readonly CURRENT_LINK="$DEPLOY_DIR/current"
+readonly SHARED_DIR="$DEPLOY_DIR/shared"
+readonly KEEP_RELEASES=5
+
+# Logging
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+die() { log "ERROR: $*" >&2; exit 1; }
+
+# Create new release directory
+create_release() {
+    local release_id="$(date +%Y%m%d%H%M%S)"
+    local release_dir="$RELEASES_DIR/$release_id"
+
+    log "Creating release: $release_id"
+
+    mkdir -p "$release_dir"
+    echo "$release_dir"
+}
+
+# Deploy code to release directory
+deploy_code() {
+    local release_dir="$1"
+    local source="${2:-.}"
+
+    log "Deploying code to $release_dir"
+
+    # Copy application code
+    rsync -av --exclude='.git' --exclude='node_modules' \
+        "$source/" "$release_dir/"
+
+    # Link shared directories
+    ln -sf "$SHARED_DIR/logs" "$release_dir/logs"
+    ln -sf "$SHARED_DIR/.env" "$release_dir/.env"
+}
+
+# Switch current symlink to new release
+switch_release() {
+    local release_dir="$1"
+
+    log "Switching to release: $(basename "$release_dir")"
+
+    ln -sfn "$release_dir" "$CURRENT_LINK"
+}
+
+# Cleanup old releases
+cleanup_old_releases() {
+    log "Cleaning up old releases (keeping $KEEP_RELEASES)"
+
+    local releases=($(ls -1t "$RELEASES_DIR"))
+    local to_delete=("${releases[@]:$KEEP_RELEASES}")
+
+    for release in "${to_delete[@]}"; do
+        log "Removing old release: $release"
+        rm -rf "$RELEASES_DIR/$release"
+    done
+}
+
+# Rollback to previous release
+rollback() {
+    local releases=($(ls -1t "$RELEASES_DIR"))
+
+    [[ ${#releases[@]} -lt 2 ]] && die "No previous release to rollback to"
+
+    local previous="${releases[1]}"
+    log "Rolling back to: $previous"
+
+    switch_release "$RELEASES_DIR/$previous"
+    log "Rollback complete"
+}
+
+# Main deployment
+deploy() {
+    local source="${1:-.}"
+
+    log "Starting deployment..."
+
+    # Create release
+    local release_dir
+    release_dir=$(create_release)
+
+    # Deploy code
+    deploy_code "$release_dir" "$source"
+
+    # Run build/install commands
+    log "Installing dependencies..."
+    (cd "$release_dir" && npm install --production 2>/dev/null || true)
+
+    # Switch to new release
+    switch_release "$release_dir"
+
+    # Restart service
+    log "Restarting application..."
+    systemctl restart myapp 2>/dev/null || true
+
+    # Cleanup
+    cleanup_old_releases
+
+    log "Deployment complete!"
+}
+
+# Parse arguments
+case "${1:-deploy}" in
+    deploy)   deploy "${2:-.}" ;;
+    rollback) rollback ;;
+    *)        echo "Usage: $SCRIPT_NAME {deploy|rollback} [source]" ;;
+esac
