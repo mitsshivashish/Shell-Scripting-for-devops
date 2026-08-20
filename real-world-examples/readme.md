@@ -60,3 +60,18 @@ setup_demo() {
     # Create backup directory
     mkdir -p "$BACKUP_DIR"
 }
+
+
+## Key Features
+- Configurable via environment or command-line
+- Compression with gzip
+- Automatic rotation of old backups
+- Verification of backup integrity
+- Logging with timestamps
+- Error handling and cleanup
+- Cron Setup
+
+Schedule daily backups with:
+
+# /etc/cron.d/backup
+0 2 * * * root /opt/scripts/backup.sh -s /var/data -d /backup -r 7 >> /var/log/backup.log 2>&1
