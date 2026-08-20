@@ -274,3 +274,85 @@ analyze_logs() {
 
 # Run with error handling
 analyze_logs 2>/dev/null || echo "Analysis failed"
+
+
+#!/usr/bin/env bash
+#
+# api-client.sh - REST API client utilities
+#
+set -euo pipefail
+
+readonly API_BASE="${API_BASE:-https://api.example.com}"
+readonly API_TOKEN="${API_TOKEN:?API_TOKEN required}"
+
+# HTTP helper
+api_request() {
+    local method="$1"
+    local endpoint="$2"
+    local data="${3:-}"
+
+    local curl_opts=(
+        -s
+        -X "$method"
+        -H "Authorization: Bearer $API_TOKEN"
+        -H "Content-Type: application/json"
+    )
+
+    [[ -n "$data" ]] && curl_opts+=(-d "$data")
+
+    local response
+    response=$(curl "${curl_opts[@]}" "$API_BASE$endpoint")
+    local status=$?
+
+    if [[ $status -ne 0 ]]; then
+        echo "Request failed" >&2
+        return 1
+    fi
+
+    echo "$response"
+}
+
+# GET request
+get() {
+    api_request GET "$1"
+}
+
+# POST request
+post() {
+    api_request POST "$1" "$2"
+}
+
+# List users
+list_users() {
+    get "/users" | jq -r '.[] | "\(.id): \(.name)"'
+}
+
+# Create user
+create_user() {
+    local name="$1"
+    local email="$2"
+
+    local payload=$(jq -n --arg n "$name" --arg e "$email" \
+        '{name: $n, email: $e}')
+
+    post "/users" "$payload"
+}
+
+# Health check
+health_check() {
+    if get "/health" | jq -e '.status == "ok"' >/dev/null; then
+        echo "API is healthy"
+        return 0
+    else
+        echo "API is unhealthy"
+        return 1
+    fi
+}
+
+# Run if executed directly
+case "${1:-}" in
+    users)  list_users ;;
+    create) create_user "$2" "$3" ;;
+    health) health_check ;;
+    *)      echo "Usage: $0 {users|create|health}" ;;
+esac
