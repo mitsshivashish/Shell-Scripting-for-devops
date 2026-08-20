@@ -356,3 +356,14 @@ case "${1:-}" in
     health) health_check ;;
     *)      echo "Usage: $0 {users|create|health}" ;;
 esac
+
+## Common Patterns Summary
+
+| **Pattern** | **Used In** | **Purpose** |
+|---|---|---|
+| `set -euo pipefail` | All scripts | Error handling |
+| `trap cleanup EXIT` | Backup, Deploy | Resource cleanup |
+| `log() { ... }` | All scripts | Consistent logging |
+| `${VAR:-default}` | All scripts | Safe defaults |
+| `getopts/case` | Backup, Monitor | Argument parsing |
+| `readonly` | All scripts | Constants |
